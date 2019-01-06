@@ -1,0 +1,189 @@
+#!/bin/bash
+# Make sure only root can run our script
+if [ "$(id -u)" != "0" ]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
+PRGNAM=phoenix-firestorm-lgpl-linux
+CHAN=$(hostname)
+CWD=$(pwd)
+NPROC=$(nproc)
+SLKVER=14.2
+BUILD=${BUILD:-1}
+TAG=${TAG:-_DRKO}
+
+TMP=${TMP:-/tmp/SBo}
+buildfs=$TMP/build
+OUTPUT=${OUTPUT:-/tmp}
+
+
+if [ -z "$ARCH" ]; then
+  case "$( uname -m )" in
+    i?86) ARCH=i486 ;;
+    arm*) ARCH=arm ;;
+       *) ARCH=$( uname -m ) ;;
+  esac
+fi
+
+if [ "$ARCH" = "i486" ]; then
+  OSARCH=""
+  BUILD="i686"
+elif [ "$ARCH" = "i686" ]; then
+  OSARCH=""
+  BUILD="i686"
+elif [ "$ARCH" = "x86_64" ]; then
+  OSARCH="64"
+  BUILD="x86_64"
+else
+  SLKCFLAGS="-O2"
+  LIBDIRSUFFIX=""
+fi
+
+rm -rf $PKG
+if [ -d $buildfs/phoenix-firestorm-lgpl-linux ]
+then
+   echo -e "\e[1;34m you hav already downloaded $PRGNAM \e[0m"
+else
+   rm -rf $buildfs
+   mkdir -p $buildfs
+   mkdir -p $TMP 
+fi
+#find slackware version with gcc
+SLKGCC="$(gcc --version | grep gcc)"
+
+
+if [ "$SLKGCC" = "gcc (GCC) 4.7.1" ]; then
+  SLKUSYS="14.0"
+elif [ "$SLKGCC" = "gcc (GCC) 4.8.2" ]; then
+  SLKUSED="14.1"
+elif [ "$SLKGCC" = "gcc (GCC) 5.5.0" ]; then
+  SLKUSYS="14.2"
+else
+  SLKUSYS="current"
+fi
+
+if [ "$SLKVER" = "$SLKUSYS" ]; then
+   echo -e "\e[1;34m Your YOUR BUILDING FOR $SLKUSYS IS CORRECT\e[0m"
+else
+    echo -e "\e[1;34m YOUR SYSTEM IS $SLKUSYS 14.1 IS TO OLD 14.2 IS THE RIGHT VERSION CURRENT IS BROKEN\e[0m" 
+ fi   
+if [ -f /var/log/packages/pip* ]
+then 
+    echo pip is installed lets update it.
+    pip install --upgrade pip
+else
+    echo we need to install pip
+    cd $buildfs
+    wget https://slackonly.com/pub/packages/14.2-x86_64/python/pip/pip-9.0.3-x86_64-1_slonly.txz
+    upgradepkg --install-new pip-9.0.3-x86_64-1_slonly.txz
+    pip install --upgrade pip
+fi
+
+if [ -d /usr/lib64/python2.7/site-packages/autobuild ]
+then 
+    echo autobuild installed update it
+    pip install autobuild
+else
+    echo we need to install autobuild
+    pip install autobuild
+fi
+
+set -e
+if [ -d $buildfs/phoenix-firestorm-lgpl-linux ]
+then
+cd $buildfs/phoenix-firestorm-lgpl-linux 
+hg pull
+hg update
+else
+cd $buildfs
+hg clone https://Drakeo@bitbucket.org/Drakeo/phoenix-firestorm-lgpl-linux
+cd phoenix-firestorm-lgpl-linux
+hg update
+fi
+
+if [ -d $buildfs/phoenix-firestorm-lgpl-linux/fs-build-variables ]
+then
+export AUTOBUILD_VARIABLES_FILE=$buildfs/phoenix-firestorm-lgpl-linux/fs-build-variables/variables
+
+else
+  hg clone https://hg.phoenixviewer.com/fs-build-variables/
+  export AUTOBUILD_VARIABLES_FILE=$buildfs/phoenix-firestorm-lgpl-linux/fs-build-variables/variables
+fi
+
+
+
+autobuild configure  -A $OSARCH -c ReleaseFS_open -- --chan="$CHAN" --jobs $NPROC --platform linux$OSARCH -DLL_TESTS:BOOL=FALSE
+
+autobuild build  -A $OSARCH -c ReleaseFS_open -- --chan="$CHAN" --jobs $NPROC  --platform linux$OSARCH -DLL_TESTS:BOOL=FALSE
+
+# ...
+function pause(){
+   read -p "$*"
+}
+
+echo -e "\e[1;33m Would you like to create the slackware package.\e[0m"
+pause 'Press [Enter] key to continue or ctrl c to stop...'
+# rest of the script
+#
+
+VERSION=$(ls $buildfs/phoenix-firestorm-lgpl-linux/build-linux-$BUILDA/newview | grep tar.xz | head -c -8)
+
+PKG=$TMP/package-$VERSION
+rm -rf $PKG
+mkdir -p $TMP $PKG $OUTPUT
+mkdir -p $PKG/opt 
+
+cd $PKG/opt 
+
+tar xvf $buildfs/phoenix-firestorm-lgpl-linux/build-linux-$BUILDA/newview/$VERSION.tar.xz
+mv $VERSION firestorm-install
+cd $PKG/opt/firestorm-install 
+
+mkdir -p $PKG/usr/doc/$VERSION
+cp -a FIRESTORM_DESKTOPINSTALL.txt README*.txt VivoxAUP.txt featuretable_linux.txt gpu_table.txt licenses.txt  $PKG/usr/doc/$VERSION
+mkdir -p $PKG/install
+cd $PKG/install
+
+#need to make the slack-desc for installer
+cat > slack-desc <<EOF
+# HOW TO EDIT THIS FILE:
+# The "handy ruler" below makes it easier to edit a package description.
+# Line up the first '|' above the ':' following the base package name, and
+# the '|' on the right side marks the last column you can put a character in.
+# You must make exactly 11 lines for the formatting to be correct.  It's also
+# customary to leave one space after the ':' except on otherwise blank lines.
+
+         |-----handy-ruler------------------------------------------------------|
+firestorm: firestorm-opensim (an alternative Second Life client)
+firestorm:
+firestorm: Firestorm Viewer is an alternative client program for Second Life,
+firestorm: a virtual world developed by Linden Lab accessible via the internet.
+firestorm:
+firestorm: Firestorm Viewer is based on Linden Lab's Viewer versions 2 and 3.
+firestorm: It has loads of new and innovative features added to improve
+firestorm: performance, increase usability, and generally enhance the user's
+firestorm: overall experience.
+firestorm:
+firestorm: This is the version with support for open sims.
+EOF
+
+cat > doinst.sh <<EOF
+sh /opt/firestorm-install/etc/refresh_desktop_app_entry.sh 
+update-desktop-database 
+EOF
+cd $PKG
+#create the package
+/sbin/makepkg -l y -c n $OUTPUT/$VERSION$TAG-$BUILD.${PKGTYPE:-tgz} 
+
+function pause(){
+   read -p "$*"
+}
+
+echo -e "\e[1;33m Would you like to install $VERSION open sim edition if so.\e[0m"
+pause 'Press [Enter] key to continue or ctrl c to stop...'
+# rest of the script
+#
+upgradepkg --reinstall --install-new $OUTPUT/$VERSION$TAG-$BUILD.${PKGTYPE:-tgz} 
+
+ 
