@@ -28,13 +28,13 @@ fi
 
 if [ "$ARCH" = "i486" ]; then
   OSARCH=""
-  BUILD="i686"
+  BUILDA="i686"
 elif [ "$ARCH" = "i686" ]; then
   OSARCH=""
-  BUILD="i686"
+  BUILDA="i686"
 elif [ "$ARCH" = "x86_64" ]; then
   OSARCH="64"
-  BUILD="x86_64"
+  BUILDA="x86_64"
 else
   SLKCFLAGS="-O2"
   LIBDIRSUFFIX=""
