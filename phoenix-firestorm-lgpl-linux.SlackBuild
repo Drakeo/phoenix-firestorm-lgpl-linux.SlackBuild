@@ -14,7 +14,7 @@ BUILD=${BUILD:-1}
 TAG=${TAG:-_DRKO}
 
 TMP=${TMP:-/tmp/SBo}
-buildfs=$TMP/build
+buildfs=$TMP/buildfs
 OUTPUT=${OUTPUT:-/tmp}
 
 
