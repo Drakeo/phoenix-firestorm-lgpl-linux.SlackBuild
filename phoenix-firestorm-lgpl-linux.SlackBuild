@@ -141,7 +141,7 @@ mv $VERSION firestorm-install
 cd $PKG/opt/firestorm-install 
 
 mkdir -p $PKG/usr/doc/$VERSION
-cp -a FIRESTORM_DESKTOPINSTALL.txt README*.txt VivoxAUP.txt featuretable_linux.txt gpu_table.txt licenses.txt  $PKG/usr/doc/$VERSION
+cp -a FIRESTORM_DESKTOPINSTALL.txt README*.txt VivoxAUP.txt featuretable_linux.txt  licenses.txt  $PKG/usr/doc/$VERSION
 mkdir -p $PKG/install
 cd $PKG/install
 
