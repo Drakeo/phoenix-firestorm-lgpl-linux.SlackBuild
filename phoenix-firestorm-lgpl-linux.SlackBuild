@@ -103,6 +103,29 @@ cd phoenix-firestorm-lgpl-linux
 hg update -r Firestorm_6.0.2
 fi
 
+#find cpu extentions avx and avx2 for custom build.
+FAVX=$(grep -o 'avx[^ ]*' /proc/cpuinfo | tail -1)
+FAVX2=$(grep -o 'avx2[^ ]*' /proc/cpuinfo | tail -1)
+
+if [ "$FAVX" = "avx" ]; then
+   AVX="--avx"
+else
+   AVX=""
+fi
+if [ "$FAVX2" = "avx2" ]; then
+  AVX2="--avx2"
+else
+   AVX2=""
+fi
+
+hash ninja &> /dev/null
+if [ $? -eq 1 ]; then
+    echo >&2 "ninja not found."
+   MNINJA=""
+else
+   MNINJA="--ninja"
+fi
+
 if [ -d $buildfs/phoenix-firestorm-lgpl-linux/fs-build-variables ]
 then
 export AUTOBUILD_VARIABLES_FILE=$buildfs/phoenix-firestorm-lgpl-linux/fs-build-variables/variables
@@ -114,9 +137,9 @@ fi
 
 
 
-autobuild configure  -A $OSARCH -c ReleaseFS_open -- --chan="$CHAN" --jobs $NPROC --platform linux$OSARCH -DLL_TESTS:BOOL=FALSE
+autobuild configure  -A $OSARCH -c ReleaseFS_open -- --chan="$CHAN" --jobs $NPROC $MNINJA $AVX $AVX2 --platform linux$OSARCH -DLL_TESTS:BOOL=FALSE
 
-autobuild build  -A $OSARCH -c ReleaseFS_open -- --chan="$CHAN" --jobs $NPROC  --platform linux$OSARCH -DLL_TESTS:BOOL=FALSE
+autobuild build  -A $OSARCH -c ReleaseFS_open -- --chan="$CHAN" --jobs $NPROC $MNINJA $AVX $AVX2 --platform linux$OSARCH -DLL_TESTS:BOOL=FALSE
 
 # ...
 function pause(){
