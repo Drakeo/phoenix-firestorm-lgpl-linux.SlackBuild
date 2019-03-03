@@ -1,0 +1,10 @@
+Version 6.0.2 stable
+When building after version update 
+you will need to clean the old build out. 
+as root run 
+~~~
+rm -rf /tmp/SBo/buildfs/build-linux-x86_64
+~~~
+if not you will have two built tar packages 
+in there and will make the slackware package 
+script fail.
