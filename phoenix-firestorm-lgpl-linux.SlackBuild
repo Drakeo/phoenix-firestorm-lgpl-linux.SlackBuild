@@ -95,11 +95,12 @@ then
 cd $buildfs/phoenix-firestorm-lgpl-linux 
 hg pull
 hg update
+hg update -r Firestorm_6.0.2
 else
 cd $buildfs
 hg clone https://Drakeo@bitbucket.org/Drakeo/phoenix-firestorm-lgpl-linux
 cd phoenix-firestorm-lgpl-linux
-hg update
+hg update -r Firestorm_6.0.2
 fi
 
 if [ -d $buildfs/phoenix-firestorm-lgpl-linux/fs-build-variables ]
