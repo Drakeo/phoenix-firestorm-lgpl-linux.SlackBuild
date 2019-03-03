@@ -193,6 +193,8 @@ firestorm: This is the version with support for open sims.
 EOF
 
 cat > doinst.sh <<EOF
+chown root:root /opt/firestorm-install/bin/chrome-sandbox
+chmod 4755 /opt/firestorm-install/bin/chrome-sandbox
 sh /opt/firestorm-install/etc/refresh_desktop_app_entry.sh 
 update-desktop-database 
 EOF
